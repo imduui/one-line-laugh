@@ -15,12 +15,18 @@ def main() -> None:
     # Validate: single sentence, 1-200 characters, non-whitespace.
     assert text, "line must not be empty"
     assert len(text) <= 200, f"line is {len(text)} characters, over the 200 limit"
-    assert text.count(".") + text.count("!") + text.count("?") <= 1, (
-        "line must be a single sentence"
-    )
+    terminators = sum(text.count(m) for m in ".!?")
+    assert terminators == 1, "line must be exactly one sentence"
     assert text == text.encode("utf-8").decode("utf-8"), "line must be valid UTF-8"
+    # The gate reads the file itself, so enforce its limits on what is
+    # actually written (line plus one trailing newline), not just on LINE.
+    written = text + "\n"
+    assert 1 <= len(written) <= 200, "written file must be 1-200 characters"
     with open("/output/entry.txt", "w", encoding="utf-8") as f:
-        f.write(text + "\n")
+        f.write(written)
+    # Read back and verify the write round-tripped exactly.
+    with open("/output/entry.txt", "r", encoding="utf-8") as f:
+        assert f.read() == written, "entry.txt does not match the line"
 
 
 if __name__ == "__main__":
